@@ -9,15 +9,15 @@ class Profile(models.Model):
     job_description = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='static/profile_pictures/', blank=True, null=True)
-    secondary_picture = models.ImageField(upload_to='static/secondary_pictures/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='media/profile_pictures/', blank=True, null=True)
+    secondary_picture = models.ImageField(upload_to='media/secondary_pictures/', blank=True, null=True)
     
     def __str__(self):
         return self.name
     
 class Contact(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15)
     address = models.TextField()
     

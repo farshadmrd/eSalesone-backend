@@ -1,8 +1,10 @@
 from django.db import models
 import uuid
 
-# Create your models here.
 class Profile(models.Model):
+    """
+    Represents a user profile with personal and professional details.
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, unique=True)
     job_title = models.CharField(max_length=100, blank=True, null=True)
@@ -16,6 +18,9 @@ class Profile(models.Model):
         return self.name
     
 class Contact(models.Model):
+    """
+    Represents contact information for a user profile.
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15)

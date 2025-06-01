@@ -1,0 +1,40 @@
+✅ PAYMENT APPROVED - eSalesOne
+=====================================
+
+Hi {{ transaction.full_name }},
+
+Great news! Your payment has been successfully processed.
+
+ORDER DETAILS:
+--------------
+Order Number: {{ transaction.id }}
+Transaction Date: {{ transaction.created_at|date:"F d, Y \a\t g:i A" }}
+Amount Paid: ${{ transaction.amount }}
+Payment Status: {{ transaction.status }}
+{% if transaction.description %}Description: {{ transaction.description }}{% endif %}
+
+{% if services %}SERVICES PURCHASED:
+-------------------
+{% for service in services %}• {{ service.title }}{% if service.description %}
+  {{ service.description }}{% endif %}
+{% endfor %}
+{% endif %}
+
+CUSTOMER INFORMATION:
+--------------------
+Name: {{ transaction.full_name }}
+Email: {{ transaction.email }}
+{% if transaction.phone_number %}Phone: {{ transaction.phone_number }}{% endif %}
+{% if transaction.address %}Address: {{ transaction.address }}{% if transaction.city %}, {{ transaction.city }}{% endif %}{% if transaction.state %}, {{ transaction.state }}{% endif %}{% if transaction.zip_code %} {{ transaction.zip_code }}{% endif %}{% endif %}
+
+WHAT'S NEXT:
+------------
+• You will receive your services as described in your order
+• Keep this email as your receipt for your records
+• If you have any questions, feel free to contact our support team
+
+Thank you for your business!
+
+---
+This is an automated email from eSalesOne. Please do not reply to this email.
+If you need assistance, contact us at support@esalesone.com

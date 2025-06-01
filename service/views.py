@@ -11,17 +11,15 @@ class ServiceViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def list(self, request, *args, **kwargs):
-        queryset = self.queryset
-        name = request.query_params.get('name', None)
-        type = request.query_params.get('type', None)
-
-        if name:
-            queryset = queryset.filter(name__iexact=name)
-        if type:
-            queryset = queryset.filter(type__name__iexact=type)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        title = request.query_params.get('title', None)
+        if title:
+            services = self.queryset.filter(title__iexact=title)
+            types = Type.objects.filter(service__in=services).distinct()
+            serializer = TypeSerializer(types, many=True)
+            return Response(serializer.data)
+        else:
+            serializer = self.get_serializer(self.queryset, many=True)
+            return Response(serializer.data)
 
 class TypeViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Type.objects.all()

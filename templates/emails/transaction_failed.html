@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Failed - eSalesOne</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border: 1px solid #dee2e6;
+        }
+        .footer {
+            background-color: #e9ecef;
+            padding: 15px;
+            text-align: center;
+            border-radius: 0 0 8px 8px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .error-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .transaction-details {
+            background-color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .detail-label {
+            font-weight: bold;
+            color: #495057;
+        }
+        .detail-value {
+            color: #6c757d;
+        }
+        .retry-section {
+            background-color: #fff3cd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+        .support-section {
+            background-color: #d1ecf1;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #17a2b8;
+        }
+        .amount-highlight {
+            font-size: 18px;
+            font-weight: bold;
+            color: #dc3545;
+        }
+        .status-failed {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="error-icon">❌</div>
+        <h1>Payment Failed</h1>
+        <p>We were unable to process your transaction</p>
+    </div>
+    
+    <div class="content">
+        <h2>Hi {{ transaction.full_name }},</h2>
+        
+        <p>We're sorry to inform you that your payment could not be processed. Please review the details below and consider trying again.</p>
+        
+        <div class="transaction-details">
+            <h3>Transaction Details</h3>
+            <div class="detail-row">
+                <span class="detail-label">Transaction ID:</span>
+                <span class="detail-value">{{ transaction.id }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Date Attempted:</span>
+                <span class="detail-value">{{ transaction.created_at|date:"F d, Y \a\t g:i A" }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Amount:</span>
+                <span class="detail-value amount-highlight">${{ transaction.amount }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span class="detail-value status-failed">{{ transaction.status }}</span>
+            </div>
+            {% if transaction.description %}
+            <div class="detail-row">
+                <span class="detail-label">Details:</span>
+                <span class="detail-value">{{ transaction.description }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="transaction-details">
+            <h3>Customer Information</h3>
+            <div class="detail-row">
+                <span class="detail-label">Name:</span>
+                <span class="detail-value">{{ transaction.full_name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email:</span>
+                <span class="detail-value">{{ transaction.email }}</span>
+            </div>
+            {% if transaction.phone_number %}
+            <div class="detail-row">
+                <span class="detail-label">Phone:</span>
+                <span class="detail-value">{{ transaction.phone_number }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="retry-section">
+            <h3>🔄 Want to try again?</h3>
+            <p>Common reasons for payment failures include:</p>
+            <ul>
+                <li>Insufficient funds in your account</li>
+                <li>Incorrect payment information</li>
+                <li>Expired card</li>
+                <li>Bank security restrictions</li>
+                <li>Network connectivity issues</li>
+            </ul>
+            <p><strong>You can try your payment again by:</strong></p>
+            <ul>
+                <li>Checking your payment information</li>
+                <li>Ensuring sufficient funds are available</li>
+                <li>Contacting your bank if needed</li>
+                <li>Trying a different payment method</li>
+            </ul>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" class="btn btn-primary">Try Payment Again</a>
+            </div>
+        </div>
+
+        <div class="support-section">
+            <h3>🆘 Need Help?</h3>
+            <p>If you continue to experience issues or believe this is an error, our support team is here to help!</p>
+            <ul>
+                <li><strong>Email:</strong> support@esalesone.com</li>
+                <li><strong>Phone:</strong> 1-800-SUPPORT</li>
+                <li><strong>Live Chat:</strong> Available on our website</li>
+            </ul>
+            <p>When contacting support, please reference your transaction ID: <strong>{{ transaction.id }}</strong></p>
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="#" class="btn btn-secondary">Contact Support</a>
+            </div>
+        </div>
+        
+        <p>We apologize for any inconvenience this may have caused and appreciate your understanding.</p>
+    </div>
+    
+    <div class="footer">
+        <p>This is an automated email from eSalesOne. Please do not reply to this email.</p>
+        <p>For assistance, contact us at support@esalesone.com or visit our help center.</p>
+    </div>
+</body>
+</html>

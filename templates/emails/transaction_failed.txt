@@ -1,0 +1,51 @@
+❌ PAYMENT FAILED - eSalesOne
+==============================
+
+Hi {{ transaction.full_name }},
+
+We're sorry to inform you that your payment could not be processed. Please review the details below and consider trying again.
+
+TRANSACTION DETAILS:
+-------------------
+Transaction ID: {{ transaction.id }}
+Date Attempted: {{ transaction.created_at|date:"F d, Y \a\t g:i A" }}
+Amount: ${{ transaction.amount }}
+Status: {{ transaction.status }}
+{% if transaction.description %}Details: {{ transaction.description }}{% endif %}
+
+CUSTOMER INFORMATION:
+--------------------
+Name: {{ transaction.full_name }}
+Email: {{ transaction.email }}
+{% if transaction.phone_number %}Phone: {{ transaction.phone_number }}{% endif %}
+
+🔄 WANT TO TRY AGAIN?
+---------------------
+Common reasons for payment failures include:
+• Insufficient funds in your account
+• Incorrect payment information
+• Expired card
+• Bank security restrictions
+• Network connectivity issues
+
+You can try your payment again by:
+• Checking your payment information
+• Ensuring sufficient funds are available
+• Contacting your bank if needed
+• Trying a different payment method
+
+🆘 NEED HELP?
+-------------
+If you continue to experience issues or believe this is an error, our support team is here to help!
+
+• Email: support@esalesone.com
+• Phone: 1-800-SUPPORT
+• Live Chat: Available on our website
+
+When contacting support, please reference your transaction ID: {{ transaction.id }}
+
+We apologize for any inconvenience this may have caused and appreciate your understanding.
+
+---
+This is an automated email from eSalesOne. Please do not reply to this email.
+For assistance, contact us at support@esalesone.com or visit our help center.

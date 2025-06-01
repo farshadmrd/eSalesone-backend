@@ -143,9 +143,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'sandbox.smtp.mailtrap.io')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 2525))
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = os.getenv('EMAIL_USERNAME', 'd8565bcb398fde')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD', '7878e6ffd12ea3')
-DEFAULT_FROM_EMAIL = 'eSalesOne <noreply@esalesone.com>'
+EMAIL_HOST_USER = os.getenv('EMAIL_USERNAME')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_PASSWORD')
 
 # For development/testing, you can uncomment the line below to print emails to console instead
 # EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

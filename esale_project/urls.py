@@ -8,11 +8,13 @@ from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from core.urls import router as core_router
 from service.urls import router as service_router
+from transaction.urls import router as transaction_router
 
 # Combine routers
 api_router = DefaultRouter()
 api_router.registry.extend(core_router.registry)
 api_router.registry.extend(service_router.registry)
+api_router.registry.extend(transaction_router.registry)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

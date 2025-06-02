@@ -20,6 +20,7 @@ media/
 .env
 .env.*
 .venv/
+venv/
 ENV/
 env/
 *.env

@@ -19,6 +19,22 @@ Name: {{ transaction.full_name }}
 Email: {{ transaction.email }}
 {% if transaction.phone_number %}Phone: {{ transaction.phone_number }}{% endif %}
 
+{% if services %}ITEMS IN YOUR ORDER ({{ service_count }} item{{ service_count|pluralize }}):
+---------------------------
+{% for service in services %}• {{ service.title }}{% if service.description %}
+  {{ service.description }}{% endif %}
+  {% if service.type_set.all %}{% for type in service.type_set.all %}  - {{ type.name }}: ${{ type.price }}
+  {% endfor %}{% endif %}
+{% endfor %}
+{% if basket %}
+ORDER SUMMARY:
+-------------
+Subtotal: ${{ basket.total_amount }}{% if basket.tax_amount and basket.tax_amount > 0 %}
+Tax: ${{ basket.tax_amount }}{% endif %}
+Total Amount: ${{ transaction.amount }}
+{% endif %}
+{% endif %}
+
 🔄 WANT TO TRY AGAIN?
 ---------------------
 Common reasons for payment failures include:

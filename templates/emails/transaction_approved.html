@@ -118,15 +118,53 @@
 
         {% if services %}
         <div class="services-list">
-            <h3>Services Purchased</h3>
+            <h3>🛒 Items Purchased ({{ service_count }} item{{ service_count|pluralize }})</h3>
             {% for service in services %}
             <div class="service-item">
-                <strong>{{ service.title }}</strong>
-                {% if service.description %}
-                <p style="margin: 5px 0; color: #6c757d;">{{ service.description }}</p>
-                {% endif %}
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <strong>{{ service.title }}</strong>
+                        {% if service.description %}
+                        <p style="margin: 5px 0; color: #6c757d;">{{ service.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: right; margin-left: 15px;">
+                        {% if service.type_set.all %}
+                            {% for type in service.type_set.all %}
+                            <div style="margin: 2px 0;">
+                                <span style="font-size: 14px; color: #6c757d;">{{ type.name }}: </span>
+                                <span style="font-weight: bold; color: #28a745;">${{ type.price }}</span>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
             </div>
             {% endfor %}
+            
+            {% if basket %}
+            <div style="background-color: #e9ecef; padding: 15px; margin-top: 15px; border-radius: 5px;">
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span><strong>Subtotal:</strong></span>
+                    <span><strong>${{ basket.total_amount }}</strong></span>
+                </div>
+                {% if basket.tax_amount and basket.tax_amount > 0 %}
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>Tax:</span>
+                    <span>${{ basket.tax_amount }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 10px 0 5px 0; font-size: 18px; border-top: 1px solid #ccc; padding-top: 10px;">
+                    <span><strong>Total Paid:</strong></span>
+                    <span style="color: #28a745;"><strong>${{ transaction.amount }}</strong></span>
+                </div>
+                {% else %}
+                <div style="display: flex; justify-content: space-between; margin: 10px 0 5px 0; font-size: 18px; border-top: 1px solid #ccc; padding-top: 10px;">
+                    <span><strong>Total Paid:</strong></span>
+                    <span style="color: #28a745;"><strong>${{ transaction.amount }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
         {% endif %}
 

@@ -1,5 +1,12 @@
 from django.contrib import admin
-from .models import Profile, Contact
+from .models import Profile, Contact, LogBarImage
+
+
+class LogBarImageInline(admin.TabularInline):
+    model = LogBarImage
+    extra = 1
+    fields = ('image', 'caption', 'order')
+    ordering = ('order',)
 
 
 @admin.register(Profile)
@@ -8,6 +15,7 @@ class ProfileAdmin(admin.ModelAdmin):
     list_filter = ('job_title',)
     search_fields = ('name', 'job_title', 'title')
     readonly_fields = ('id',)
+    inlines = [LogBarImageInline]
     
     fieldsets = (
         ('Basic Information', {
@@ -30,6 +38,15 @@ class ProfileAdmin(admin.ModelAdmin):
         if obj:  # editing an existing object
             return self.readonly_fields + ('id',)
         return self.readonly_fields
+
+
+@admin.register(LogBarImage)
+class LogBarImageAdmin(admin.ModelAdmin):
+    list_display = ('profile', 'caption', 'order', 'id')
+    list_filter = ('profile',)
+    search_fields = ('profile__name', 'caption')
+    readonly_fields = ('id',)
+    ordering = ('profile', 'order')
 
 
 @admin.register(Contact)

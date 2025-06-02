@@ -16,6 +16,23 @@ class Profile(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class LogBarImage(models.Model):
+    """
+    Represents images for the log bar of a profile.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='log_bar_images')
+    image = models.ImageField(upload_to='media/log_bar_images/')
+    caption = models.CharField(max_length=200, blank=True, null=True)
+    order = models.PositiveIntegerField(default=0, help_text="Order of the image in the log bar")
+    
+    class Meta:
+        ordering = ['order', 'id']
+    
+    def __str__(self):
+        return f"Log bar image for {self.profile.name}"
     
 class Contact(models.Model):
     """

@@ -1,0 +1,11 @@
+# Django Framework
+Django==5.2.1
+
+# Django REST Framework for API development
+djangorestframework==3.15.2
+
+# Environment variables management
+python-dotenv==1.0.1
+
+# Image processing for file uploads
+Pillow==10.4.0

@@ -156,6 +156,58 @@
             {% endif %}
         </div>
 
+        {% if services %}
+        <div class="transaction-details">
+            <h3>🛒 Items in Your Order ({{ service_count }} item{{ service_count|pluralize }})</h3>
+            {% for service in services %}
+            <div style="padding: 10px; margin: 5px 0; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid #ffc107;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <strong>{{ service.title }}</strong>
+                        {% if service.description %}
+                        <p style="margin: 5px 0; color: #6c757d; font-size: 14px;">{{ service.description }}</p>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: right; margin-left: 15px;">
+                        {% if service.type_set.all %}
+                            {% for type in service.type_set.all %}
+                            <div style="margin: 2px 0;">
+                                <span style="font-size: 14px; color: #6c757d;">{{ type.name }}: </span>
+                                <span style="font-weight: bold; color: #dc3545;">${{ type.price }}</span>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            {% if basket %}
+            <div style="background-color: #fff3cd; padding: 15px; margin-top: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span><strong>Subtotal:</strong></span>
+                    <span><strong>${{ basket.total_amount }}</strong></span>
+                </div>
+                {% if basket.tax_amount and basket.tax_amount > 0 %}
+                <div style="display: flex; justify-content: space-between; margin: 5px 0;">
+                    <span>Tax:</span>
+                    <span>${{ basket.tax_amount }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin: 10px 0 5px 0; font-size: 18px; border-top: 1px solid #ccc; padding-top: 10px;">
+                    <span><strong>Total Amount:</strong></span>
+                    <span style="color: #dc3545;"><strong>${{ transaction.amount }}</strong></span>
+                </div>
+                {% else %}
+                <div style="display: flex; justify-content: space-between; margin: 10px 0 5px 0; font-size: 18px; border-top: 1px solid #ccc; padding-top: 10px;">
+                    <span><strong>Total Amount:</strong></span>
+                    <span style="color: #dc3545;"><strong>${{ transaction.amount }}</strong></span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <div class="retry-section">
             <h3>🔄 Want to try again?</h3>
             <p>Common reasons for payment failures include:</p>

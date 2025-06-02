@@ -15,6 +15,52 @@ class TransactionEmailService:
     """
     
     @staticmethod
+    def _get_basket_info(transaction):
+        """
+        Get comprehensive basket information for email templates.
+        
+        Args:
+            transaction: Transaction instance
+            
+        Returns:
+            dict: Basket information including services, totals, and counts
+        """
+        basket_info = {
+            'services': [],
+            'basket': None,
+            'total_amount': 0,
+            'tax_amount': 0,
+            'service_count': 0,
+        }
+        
+        if transaction.basket:
+            basket = transaction.basket
+            basket_info['basket'] = basket
+            basket_info['total_amount'] = basket.total_amount
+            basket_info['tax_amount'] = basket.tax_amount
+            
+            # Get services with their related type information
+            services = basket.services.select_related().all()
+            basket_info['services'] = services
+            basket_info['service_count'] = services.count()
+            
+            # Enhance services with pricing information from related types
+            services_with_prices = []
+            for service in services:
+                # Get related types for this service
+                service_types = service.type_set.all()
+                service_data = {
+                    'service': service,
+                    'types': service_types,
+                    'total_price': sum(t.price for t in service_types),
+                }
+                services_with_prices.append(service_data)
+            
+            basket_info['services_with_prices'] = services_with_prices
+        
+        return basket_info
+    
+    @staticmethod
     def send_transaction_approved_email(transaction):
         """
         Send an email notification for approved transactions.
@@ -26,15 +72,18 @@ class TransactionEmailService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
-            # Get services if basket exists
-            services = []
-            if transaction.basket:
-                services = transaction.basket.services.all()
+            # Get comprehensive basket information
+            basket_info = TransactionEmailService._get_basket_info(transaction)
             
             # Email context
             context = {
                 'transaction': transaction,
-                'services': services,
+                'services': basket_info['services'],
+                'services_with_prices': basket_info.get('services_with_prices', []),
+                'basket': basket_info['basket'],
+                'basket_total': basket_info['total_amount'],
+                'basket_tax': basket_info['tax_amount'],
+                'service_count': basket_info['service_count'],
             }
             
             # Email subject
@@ -79,9 +128,18 @@ class TransactionEmailService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
+            # Get comprehensive basket information for failed transactions too
+            basket_info = TransactionEmailService._get_basket_info(transaction)
+            
             # Email context
             context = {
                 'transaction': transaction,
+                'services': basket_info['services'],
+                'services_with_prices': basket_info.get('services_with_prices', []),
+                'basket': basket_info['basket'],
+                'basket_total': basket_info['total_amount'],
+                'basket_tax': basket_info['tax_amount'],
+                'service_count': basket_info['service_count'],
             }
             
             # Email subject

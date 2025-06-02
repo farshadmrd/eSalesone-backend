@@ -1,29 +1,63 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import datetime
-from .models import Transaction, Basket
+from .models import Transaction, Basket, BasketItem
 
+class BasketItemSerializer(serializers.ModelSerializer):
+    """
+    Serializer for BasketItem model.
+    """
+    service_type_name = serializers.CharField(source='service_type.__str__', read_only=True)
+    total_price = serializers.DecimalField(source='get_total_price', max_digits=10, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = BasketItem
+        fields = [
+            'id',
+            'service_type',
+            'service_type_name',
+            'quantity',
+            'total_price',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 class BasketSerializer(serializers.ModelSerializer):
     """
     Serializer for Basket model.
     """
-    services_count = serializers.SerializerMethodField()
+    items = BasketItemSerializer(many=True, read_only=True)
+    items_count = serializers.SerializerMethodField()
+    calculated_total = serializers.SerializerMethodField()
     
     class Meta:
         model = Basket
         fields = [
             'id',
-            'services',
-            'services_count',
+            'items',
+            'items_count',
             'total_amount',
+            'calculated_total',
             'tax_amount',
+            'status',
             'created_at'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'total_amount', 'tax_amount']
     
-    def get_services_count(self, obj):
-        return obj.services.count()
+    def get_items_count(self, obj):
+        return obj.items.count()
+    
+    def get_calculated_total(self, obj):
+        return obj.calculate_total_amount()
+    
+    def save(self, **kwargs):
+        """
+        Override save to automatically update totals when basket is saved.
+        """
+        instance = super().save(**kwargs)
+        # Update totals after saving
+        instance.update_totals()
+        return instance
 
 
 class TransactionSerializer(serializers.ModelSerializer):
@@ -31,6 +65,7 @@ class TransactionSerializer(serializers.ModelSerializer):
     Serializer for Transaction model.
     """
     basket_details = BasketSerializer(source='basket', read_only=True)
+    basket_total_with_tax = serializers.SerializerMethodField()
     
     class Meta:
         model = Transaction
@@ -38,6 +73,7 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id',
             'basket',
             'basket_details',
+            'basket_total_with_tax',
             'full_name',
             'email',
             'phone_number',
@@ -59,6 +95,12 @@ class TransactionSerializer(serializers.ModelSerializer):
             'expiry_date': {'write_only': True},
             'cvv': {'write_only': True},
         }
+    
+    def get_basket_total_with_tax(self, obj):
+        """Get the total amount including tax from the associated basket."""
+        if obj.basket:
+            return obj.basket.total_amount + obj.basket.tax_amount
+        return None
     
     def validate_expiry_date(self, value):
         """
@@ -121,3 +163,22 @@ class TransactionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Card number must be between 13 and 19 digits")
         
         return value
+    
+    def validate(self, data):
+        """
+        Validate that either basket or amount is provided, but when basket is provided,
+        amount will be calculated automatically.
+        """
+        basket = data.get('basket')
+        amount = data.get('amount')
+        
+        if basket:
+            # If basket is provided, amount will be set automatically from basket total
+            # Remove amount from validation since it will be overridden
+            if 'amount' in data:
+                del data['amount']
+        elif not amount:
+            # If no basket is provided, amount is required
+            raise serializers.ValidationError("Either 'basket' or 'amount' must be provided.")
+        
+        return data

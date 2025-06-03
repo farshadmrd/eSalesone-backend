@@ -198,6 +198,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         """
         Create a new Transaction instance.
         Handle the basket field separately since it's a nested serializer.
+        Automatically process payment based on card number.
         """
         # Extract basket data since it's handled by a nested serializer
         basket_data = validated_data.pop('basket', [])
@@ -205,11 +206,26 @@ class TransactionSerializer(serializers.ModelSerializer):
         # Convert UUID objects to strings for JSON serialization
         basket_data = self._convert_uuids_to_strings(basket_data)
         
+        # Get card number for payment simulation
+        card_number = validated_data.get('card_number')
+        
         # Create the transaction instance
         transaction = Transaction.objects.create(**validated_data)
         
         # Set the basket data (it's stored as JSON in the model)
         transaction.basket = basket_data
+        
+        # Automatically process payment based on card number
+        if card_number:
+            if card_number == '1':  # ✅ Approved Transaction
+                transaction.status = 'APPROVED'
+            elif card_number == '2':  # ❌ Declined
+                transaction.status = 'DECLINED'
+            elif card_number == '3':  # ⚠️ Gateway Failure
+                transaction.status = 'FAILED'
+            else:  # Default approved for other card numbers
+                transaction.status = 'APPROVED'
+        
         transaction.save()
         
         return transaction

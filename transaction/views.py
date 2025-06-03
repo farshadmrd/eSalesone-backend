@@ -58,32 +58,42 @@ class TransactionViewSet(viewsets.ModelViewSet):
         
         if card_number:
             # Simulate different payment outcomes based on card number
-            if card_number == '1':  # Success case
-                transaction.status = 'COMPLETED'
+            if card_number == '1':  # ✅ Approved Transaction
+                transaction.status = 'APPROVED'
                 transaction.save()
                 
                 return Response({
-                    'message': 'Payment processed successfully',
+                    'message': 'Payment approved successfully',
                     'transaction_id': transaction.id,
                     'status': transaction.status
                 }, status=status.HTTP_200_OK)
                 
-            elif card_number == '2':  # Failure case
-                transaction.status = 'FAILED'
+            elif card_number == '2':  # ❌ Declined
+                transaction.status = 'DECLINED'
                 transaction.save()
                 
                 return Response({
-                    'message': 'Payment failed',
+                    'message': 'Payment declined',
                     'transaction_id': transaction.id,
                     'status': transaction.status
                 }, status=status.HTTP_400_BAD_REQUEST)
             
-            else:  # Default success for other card numbers
-                transaction.status = 'COMPLETED'
+            elif card_number == '3':  # ⚠️ Gateway Failure
+                transaction.status = 'FAILED'
                 transaction.save()
                 
                 return Response({
-                    'message': 'Payment processed successfully',
+                    'message': 'Gateway failure - payment could not be processed',
+                    'transaction_id': transaction.id,
+                    'status': transaction.status
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            
+            else:  # Default approved for other card numbers
+                transaction.status = 'APPROVED'
+                transaction.save()
+                
+                return Response({
+                    'message': 'Payment approved successfully',
                     'transaction_id': transaction.id,
                     'status': transaction.status
                 }, status=status.HTTP_200_OK)

@@ -9,7 +9,8 @@ class Transaction(models.Model):
     """
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
-        ('COMPLETED', 'Completed'),
+        ('APPROVED', 'Approved'),
+        ('DECLINED', 'Declined'),
         ('FAILED', 'Failed'),
     ]
     

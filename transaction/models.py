@@ -14,7 +14,7 @@ class Transaction(models.Model):
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    basket = models.JSONField(default=list, help_text="Array of items, each with name, price, and quantity")
+    basket = models.JSONField(default=list, help_text="Array of items, each with service_type_id and quantity")
     full_name = models.CharField(max_length=255)
     email = models.EmailField()
     phone_number = models.CharField(max_length=20, blank=True, null=True)
@@ -35,15 +35,19 @@ class Transaction(models.Model):
     
     def calculate_amount_from_basket(self):
         """
-        Calculate the total amount from basket items.
+        Calculate the total amount from basket items using service type IDs.
         """
+        from service.models import Type
         total = Decimal('0.00')
         if self.basket:
             for item in self.basket:
-                if all(key in item for key in ['price', 'quantity']):
-                    price = Decimal(str(item['price']))
-                    quantity = int(item['quantity'])
-                    total += price * quantity
+                if all(key in item for key in ['service_type_id', 'quantity']):
+                    try:
+                        service_type = Type.objects.get(id=item['service_type_id'])
+                        quantity = int(item['quantity'])
+                        total += service_type.price * quantity
+                    except Type.DoesNotExist:
+                        continue  # Skip invalid service types
         return total
     
     def calculate_tax_amount(self, tax_rate=Decimal('0.10')):
@@ -64,9 +68,18 @@ class Transaction(models.Model):
     def save(self, *args, **kwargs):
         """
         Override save to automatically calculate amount from basket if not set.
+        Also ensure UUIDs in basket are converted to strings for JSON serialization.
         """
-        if self.amount == Decimal('0.00') and self.basket:
-            self.amount = self.get_total_with_tax()
+        # Convert UUID objects to strings in basket data
+        if self.basket:
+            import uuid as uuid_module
+            for item in self.basket:
+                for key, value in item.items():
+                    if isinstance(value, uuid_module.UUID):
+                        item[key] = str(value)
+        
+        if self.amount == 0.00 and self.basket:
+            self.amount = float(self.get_total_with_tax())
         super().save(*args, **kwargs)
     
     def __str__(self):

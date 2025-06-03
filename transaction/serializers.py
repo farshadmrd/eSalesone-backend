@@ -4,19 +4,67 @@ from datetime import datetime
 from decimal import Decimal
 import json
 from .models import Transaction
+from service.models import Type, Service
 
 class BasketItemSerializer(serializers.Serializer):
     """
     Serializer for individual basket items.
     """
-    name = serializers.CharField(max_length=255)
-    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    service_type_id = serializers.UUIDField()
     quantity = serializers.IntegerField(min_value=1)
     
-    def validate_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Price must be greater than 0")
-        return value
+    # Read-only fields for display
+    service_type_name = serializers.SerializerMethodField(read_only=True)
+    service_type_price = serializers.SerializerMethodField(read_only=True)
+    service_title = serializers.SerializerMethodField(read_only=True)
+    
+    def get_service_type_name(self, obj):
+        """Get the service type name."""
+        try:
+            # Handle both dict (from JSON) and object access patterns
+            service_type_id = obj.get('service_type_id') if isinstance(obj, dict) else getattr(obj, 'service_type_id', None)
+            if service_type_id:
+                service_type = Type.objects.get(id=service_type_id)
+                return service_type.name
+        except (Type.DoesNotExist, AttributeError, KeyError):
+            pass
+        return None
+    
+    def get_service_type_price(self, obj):
+        """Get the service type price."""
+        try:
+            # Handle both dict (from JSON) and object access patterns
+            service_type_id = obj.get('service_type_id') if isinstance(obj, dict) else getattr(obj, 'service_type_id', None)
+            if service_type_id:
+                service_type = Type.objects.get(id=service_type_id)
+                return float(service_type.price)
+        except (Type.DoesNotExist, AttributeError, KeyError):
+            pass
+        return None
+    
+    def get_service_title(self, obj):
+        """Get the service title."""
+        try:
+            # Handle both dict (from JSON) and object access patterns
+            service_type_id = obj.get('service_type_id') if isinstance(obj, dict) else getattr(obj, 'service_type_id', None)
+            if service_type_id:
+                service_type = Type.objects.get(id=service_type_id)
+                return service_type.service.title
+        except (Type.DoesNotExist, AttributeError, KeyError):
+            pass
+        return None
+    
+    def validate_service_type_id(self, value):
+        """Validate that the service type exists and is active."""
+        try:
+            service_type = Type.objects.get(id=value)
+            if not service_type.is_active:
+                raise serializers.ValidationError("This service type is not active")
+            if not service_type.service.is_active:
+                raise serializers.ValidationError("This service is not active")
+            return value
+        except Type.DoesNotExist:
+            raise serializers.ValidationError("Service type does not exist")
 
 class TransactionSerializer(serializers.ModelSerializer):
     """
@@ -77,9 +125,9 @@ class TransactionSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Basket cannot be empty")
         
         for item in value:
-            if not all(key in item for key in ['name', 'price', 'quantity']):
+            if not all(key in item for key in ['service_type_id', 'quantity']):
                 raise serializers.ValidationError(
-                    "Each basket item must have 'name', 'price', and 'quantity'"
+                    "Each basket item must have 'service_type_id' and 'quantity'"
                 )
         
         return value
@@ -154,8 +202,8 @@ class TransactionSerializer(serializers.ModelSerializer):
         # Extract basket data since it's handled by a nested serializer
         basket_data = validated_data.pop('basket', [])
         
-        # Convert Decimal objects to strings for JSON serialization
-        basket_data = self._convert_decimals_to_strings(basket_data)
+        # Convert UUID objects to strings for JSON serialization
+        basket_data = self._convert_uuids_to_strings(basket_data)
         
         # Create the transaction instance
         transaction = Transaction.objects.create(**validated_data)
@@ -165,3 +213,19 @@ class TransactionSerializer(serializers.ModelSerializer):
         transaction.save()
         
         return transaction
+    
+    def _convert_uuids_to_strings(self, basket_data):
+        """
+        Convert UUID objects to strings for JSON serialization.
+        """
+        import uuid
+        converted_data = []
+        for item in basket_data:
+            converted_item = {}
+            for key, value in item.items():
+                if isinstance(value, uuid.UUID):
+                    converted_item[key] = str(value)
+                else:
+                    converted_item[key] = value
+            converted_data.append(converted_item)
+        return converted_data

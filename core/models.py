@@ -1,5 +1,6 @@
 from django.db import models
 import uuid
+from .validators import validate_image_file_extension
 
 class Profile(models.Model):
     """

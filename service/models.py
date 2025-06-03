@@ -1,5 +1,6 @@
 import uuid
 from django.db import models
+from core.validators import validate_logo_file_extension
 
 class Service(models.Model):
     """
@@ -24,6 +25,7 @@ class Type(models.Model):
     description = models.JSONField(default=list, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
     is_active = models.BooleanField(default=True)
+    recommended = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.service.title}-{self.name}"

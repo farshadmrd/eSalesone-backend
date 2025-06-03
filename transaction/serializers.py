@@ -1,43 +1,40 @@
 from rest_framework import serializers
 from django.utils import timezone
 from datetime import datetime
-from .models import Transaction, Basket
+from decimal import Decimal
+import json
+from .models import Transaction
 
-
-class BasketSerializer(serializers.ModelSerializer):
+class BasketItemSerializer(serializers.Serializer):
     """
-    Serializer for Basket model.
+    Serializer for individual basket items.
     """
-    services_count = serializers.SerializerMethodField()
+    name = serializers.CharField(max_length=255)
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    quantity = serializers.IntegerField(min_value=1)
     
-    class Meta:
-        model = Basket
-        fields = [
-            'id',
-            'services',
-            'services_count',
-            'total_amount',
-            'tax_amount',
-            'created_at'
-        ]
-        read_only_fields = ['id', 'created_at']
-    
-    def get_services_count(self, obj):
-        return obj.services.count()
-
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be greater than 0")
+        return value
 
 class TransactionSerializer(serializers.ModelSerializer):
     """
     Serializer for Transaction model.
     """
-    basket_details = BasketSerializer(source='basket', read_only=True)
+    basket = BasketItemSerializer(many=True)
+    subtotal = serializers.SerializerMethodField()
+    tax_amount = serializers.SerializerMethodField()
+    total_with_tax = serializers.SerializerMethodField()
     
     class Meta:
         model = Transaction
         fields = [
             'id',
             'basket',
-            'basket_details',
+            'subtotal',
+            'tax_amount',
+            'total_with_tax',
             'full_name',
             'email',
             'phone_number',
@@ -53,12 +50,39 @@ class TransactionSerializer(serializers.ModelSerializer):
             'description',
             'created_at'
         ]
-        read_only_fields = ['id', 'created_at']
+        read_only_fields = ['id', 'created_at', 'amount', 'subtotal', 'tax_amount', 'total_with_tax']
         extra_kwargs = {
             'card_number': {'write_only': True},
             'expiry_date': {'write_only': True},
             'cvv': {'write_only': True},
         }
+    
+    def get_subtotal(self, obj):
+        """Get the subtotal amount from basket items."""
+        return obj.calculate_amount_from_basket()
+    
+    def get_tax_amount(self, obj):
+        """Get the tax amount (10% of subtotal)."""
+        return obj.calculate_tax_amount()
+    
+    def get_total_with_tax(self, obj):
+        """Get the total amount including tax."""
+        return obj.get_total_with_tax()
+    
+    def validate_basket(self, value):
+        """
+        Validate that basket is not empty and has valid items.
+        """
+        if not value:
+            raise serializers.ValidationError("Basket cannot be empty")
+        
+        for item in value:
+            if not all(key in item for key in ['name', 'price', 'quantity']):
+                raise serializers.ValidationError(
+                    "Each basket item must have 'name', 'price', and 'quantity'"
+                )
+        
+        return value
     
     def validate_expiry_date(self, value):
         """
@@ -121,3 +145,38 @@ class TransactionSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Card number must be between 13 and 19 digits")
         
         return value
+    
+    def _convert_decimals_to_strings(self, basket_data):
+        """
+        Convert Decimal objects to strings for JSON serialization.
+        """
+        converted_data = []
+        for item in basket_data:
+            converted_item = {}
+            for key, value in item.items():
+                if isinstance(value, Decimal):
+                    converted_item[key] = str(value)
+                else:
+                    converted_item[key] = value
+            converted_data.append(converted_item)
+        return converted_data
+    
+    def create(self, validated_data):
+        """
+        Create a new Transaction instance.
+        Handle the basket field separately since it's a nested serializer.
+        """
+        # Extract basket data since it's handled by a nested serializer
+        basket_data = validated_data.pop('basket', [])
+        
+        # Convert Decimal objects to strings for JSON serialization
+        basket_data = self._convert_decimals_to_strings(basket_data)
+        
+        # Create the transaction instance
+        transaction = Transaction.objects.create(**validated_data)
+        
+        # Set the basket data (it's stored as JSON in the model)
+        transaction.basket = basket_data
+        transaction.save()
+        
+        return transaction

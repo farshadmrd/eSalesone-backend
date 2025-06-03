@@ -9,6 +9,6 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(Type)
 class TypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'service', 'price', 'is_active')
+    list_display = ('name', 'service', 'price', 'is_active', 'recommended')
     search_fields = ('name', 'description')
-    list_filter = ('is_active', 'service')
+    list_filter = ('is_active', 'recommended', 'service')

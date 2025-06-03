@@ -8,7 +8,7 @@ from .serializers import ProfileSerializer, ContactSerializer
 # Create your views here.
 
 class ProfileViewSet(viewsets.ModelViewSet):
-    queryset = Profile.objects.all()
+    queryset = Profile.objects.prefetch_related('log_bar_images').all()
     serializer_class = ProfileSerializer
     lookup_field = 'name'
     lookup_value_regex = '[^/]+'  

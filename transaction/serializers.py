@@ -146,21 +146,6 @@ class TransactionSerializer(serializers.ModelSerializer):
         
         return value
     
-    def _convert_decimals_to_strings(self, basket_data):
-        """
-        Convert Decimal objects to strings for JSON serialization.
-        """
-        converted_data = []
-        for item in basket_data:
-            converted_item = {}
-            for key, value in item.items():
-                if isinstance(value, Decimal):
-                    converted_item[key] = str(value)
-                else:
-                    converted_item[key] = value
-            converted_data.append(converted_item)
-        return converted_data
-    
     def create(self, validated_data):
         """
         Create a new Transaction instance.

@@ -1,5 +1,6 @@
 from django.db import models
 import uuid
+from .validators import validate_image_file_extension
 
 class Profile(models.Model):
     """
@@ -11,8 +12,8 @@ class Profile(models.Model):
     job_description = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=50, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='media/profile_pictures/', blank=True, null=True)
-    secondary_picture = models.ImageField(upload_to='media/secondary_pictures/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='media/profile_pictures/', blank=True, null=True, validators=[validate_image_file_extension])
+    secondary_picture = models.ImageField(upload_to='media/secondary_pictures/', blank=True, null=True, validators=[validate_image_file_extension])
     
     def __str__(self):
         return self.name
@@ -24,7 +25,7 @@ class LogBarImage(models.Model):
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='log_bar_images')
-    image = models.ImageField(upload_to='media/log_bar_images/')
+    image = models.ImageField(upload_to='media/log_bar_images/', validators=[validate_image_file_extension])
     caption = models.CharField(max_length=200, blank=True, null=True)
     order = models.PositiveIntegerField(default=0, help_text="Order of the image in the log bar")
     

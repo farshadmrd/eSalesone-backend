@@ -19,7 +19,7 @@ api_router.registry.extend(transaction_router.registry)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('api/', include(api_router.urls)),
+    path('/', include(api_router.urls)),
 ]
 
 # Serve media files during development

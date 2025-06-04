@@ -13,5 +13,6 @@ Pillow==10.4.0
 # PostgreSQL database adapter
 psycopg2-binary==2.9.10
 
-gunicorn
-dj-database-url
+gunicorn==20.1.0
+dj-database-url=3.0.0
+whitenoise==6.5.0

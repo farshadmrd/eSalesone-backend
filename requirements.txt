@@ -9,4 +9,8 @@ python-dotenv==1.0.1
 
 # Image processing for file uploads
 Pillow==10.4.0
+
+# PostgreSQL database adapter
+psycopg2-binary==2.9.9
+
 gunicorn

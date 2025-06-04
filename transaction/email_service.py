@@ -25,38 +25,98 @@ class TransactionEmailService:
         Returns:
             dict: Basket information including services, totals, and counts
         """
+        from service.models import Service, Type
+        
         basket_info = {
             'services': [],
-            'basket': None,
-            'total_amount': 0,
-            'tax_amount': 0,
+            'basket': {
+                'total_amount': transaction.calculate_amount_from_basket(),
+                'tax_amount': transaction.calculate_tax_amount(),
+            },
+            'total_amount': transaction.calculate_amount_from_basket(),
+            'tax_amount': transaction.calculate_tax_amount(),
             'service_count': 0,
         }
         
         if transaction.basket:
-            basket = transaction.basket
-            basket_info['basket'] = basket
-            basket_info['total_amount'] = basket.total_amount
-            basket_info['tax_amount'] = basket.tax_amount
+            # Process each item in the JSON basket
+            services_list = []
+            unique_services = {}
             
-            # Get services with their related type information
-            services = basket.services.select_related().all()
-            basket_info['services'] = services
-            basket_info['service_count'] = services.count()
+            for item in transaction.basket:
+                if 'service_type_id' in item and 'quantity' in item:
+                    try:
+                        service_type = Type.objects.select_related('service').get(id=item['service_type_id'])
+                        service = service_type.service
+                        quantity = int(item['quantity'])
+                        
+                        # Group by service and collect all types
+                        if service.id not in unique_services:
+                            unique_services[service.id] = {
+                                'service': service,
+                                'types': []
+                            }
+                        
+                        # Add this type to the service
+                        unique_services[service.id]['types'].append({
+                            'type': service_type,
+                            'quantity': quantity,
+                            'subtotal': service_type.price * quantity
+                        })
+                        
+                    except Type.DoesNotExist:
+                        continue  # Skip invalid service types
             
-            # Enhance services with pricing information from related types
-            services_with_prices = []
-            for service in services:
-                # Get related types for this service
-                service_types = service.type_set.all()
-                service_data = {
-                    'service': service,
-                    'types': service_types,
-                    'total_price': sum(t.price for t in service_types),
-                }
-                services_with_prices.append(service_data)
+            # Convert to list format for templates
+            for service_data in unique_services.values():
+                # Create a wrapper object that includes service data and types
+                service = service_data['service']
+                types_data = service_data['types']
+                
+                # Create a service wrapper with type information
+                class ServiceWrapper:
+                    def __init__(self, service, types_data):
+                        # Django model managers and related fields to exclude
+                        excluded_attrs = {
+                            'objects', 'DoesNotExist', 'MultipleObjectsReturned', 'type_set',
+                            '_meta', '_state', '_prefetched_objects_cache'
+                        }
+                        
+                        # Copy safe attributes from the original service
+                        for attr in dir(service):
+                            if (not attr.startswith('_') and 
+                                attr not in excluded_attrs and
+                                not callable(getattr(service, attr, None)) and
+                                not hasattr(getattr(service, attr, None), 'all')):  # Skip manager-like objects
+                                try:
+                                    setattr(self, attr, getattr(service, attr))
+                                except (AttributeError, TypeError):
+                                    continue  # Skip problematic attributes
+                        
+                        # Explicitly set essential service attributes
+                        self.id = service.id
+                        self.title = service.title  # Service model uses 'title', not 'name'
+                        self.name = service.title   # Also set 'name' for template compatibility
+                        self.description = getattr(service, 'description', '')
+                        self.logo = getattr(service, 'logo', None)
+                        
+                        # Create type_set mock
+                        self.type_set = MockTypeSet([t['type'] for t in types_data])
+                        self.types_with_quantities = types_data
+                
+                # Create a simple mock object for type_set
+                class MockTypeSet:
+                    def __init__(self, types):
+                        self._types = types
+                    
+                    def all(self):
+                        return self._types
+                
+                service_wrapper = ServiceWrapper(service, types_data)
+                services_list.append(service_wrapper)
             
-            basket_info['services_with_prices'] = services_with_prices
+            basket_info['services'] = services_list
+            basket_info['service_count'] = len(services_list)
         
         return basket_info
     
@@ -183,9 +243,9 @@ class TransactionEmailService:
         Returns:
             bool: True if email was sent successfully, False otherwise
         """
-        if transaction.status == 'COMPLETED':
+        if transaction.status == 'APPROVED':
             return TransactionEmailService.send_transaction_approved_email(transaction)
-        elif transaction.status == 'FAILED':
+        elif transaction.status in ['FAILED', 'DECLINED']:
             return TransactionEmailService.send_transaction_failed_email(transaction)
         else:
             logger.warning(f"No email template for transaction status: {transaction.status}")

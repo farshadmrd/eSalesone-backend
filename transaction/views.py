@@ -26,13 +26,16 @@ class TransactionViewSet(viewsets.ModelViewSet):
             # Save the transaction
             transaction = serializer.save()
             
-            # Send confirmation email
+            # Send email notification based on final transaction status
             try:
                 email_service = TransactionEmailService()
-                email_service.send_transaction_confirmation(transaction)
-                logger.info(f"Confirmation email sent for transaction {transaction.id}")
+                email_sent = email_service.send_transaction_notification(transaction)
+                if email_sent:
+                    logger.info(f"Transaction email sent for transaction {transaction.id} with status {transaction.status}")
+                else:
+                    logger.warning(f"Failed to send transaction email for transaction {transaction.id}")
             except Exception as e:
-                logger.error(f"Failed to send confirmation email for transaction {transaction.id}: {str(e)}")
+                logger.error(f"Error sending transaction email for transaction {transaction.id}: {str(e)}")
             
             # Return the created transaction with calculated amounts
             response_serializer = self.get_serializer(transaction)
@@ -62,6 +65,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 transaction.status = 'APPROVED'
                 transaction.save()
                 
+                # Send approval email notification
+                try:
+                    email_service = TransactionEmailService()
+                    email_sent = email_service.send_transaction_notification(transaction)
+                    if email_sent:
+                        logger.info(f"Approval email sent for transaction {transaction.id}")
+                    else:
+                        logger.warning(f"Failed to send approval email for transaction {transaction.id}")
+                except Exception as e:
+                    logger.error(f"Error sending approval email for transaction {transaction.id}: {str(e)}")
+                
                 return Response({
                     'message': 'Payment approved successfully',
                     'transaction_id': transaction.id,
@@ -71,6 +85,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
             elif card_number == '2':  # ❌ Declined
                 transaction.status = 'DECLINED'
                 transaction.save()
+                
+                # Send decline email notification
+                try:
+                    email_service = TransactionEmailService()
+                    email_sent = email_service.send_transaction_notification(transaction)
+                    if email_sent:
+                        logger.info(f"Decline email sent for transaction {transaction.id}")
+                    else:
+                        logger.warning(f"Failed to send decline email for transaction {transaction.id}")
+                except Exception as e:
+                    logger.error(f"Error sending decline email for transaction {transaction.id}: {str(e)}")
                 
                 return Response({
                     'message': 'Payment declined',
@@ -82,6 +107,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
                 transaction.status = 'FAILED'
                 transaction.save()
                 
+                # Send failure email notification
+                try:
+                    email_service = TransactionEmailService()
+                    email_sent = email_service.send_transaction_notification(transaction)
+                    if email_sent:
+                        logger.info(f"Failure email sent for transaction {transaction.id}")
+                    else:
+                        logger.warning(f"Failed to send failure email for transaction {transaction.id}")
+                except Exception as e:
+                    logger.error(f"Error sending failure email for transaction {transaction.id}: {str(e)}")
+                
                 return Response({
                     'message': 'Gateway failure - payment could not be processed',
                     'transaction_id': transaction.id,
@@ -91,6 +127,17 @@ class TransactionViewSet(viewsets.ModelViewSet):
             else:  # Default approved for other card numbers
                 transaction.status = 'APPROVED'
                 transaction.save()
+                
+                # Send approval email notification
+                try:
+                    email_service = TransactionEmailService()
+                    email_sent = email_service.send_transaction_notification(transaction)
+                    if email_sent:
+                        logger.info(f"Approval email sent for transaction {transaction.id}")
+                    else:
+                        logger.warning(f"Failed to send approval email for transaction {transaction.id}")
+                except Exception as e:
+                    logger.error(f"Error sending approval email for transaction {transaction.id}: {str(e)}")
                 
                 return Response({
                     'message': 'Payment approved successfully',
